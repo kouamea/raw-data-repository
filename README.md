@@ -356,9 +356,15 @@ The default order results are returned is...
 * last modified time
 * participant ID (ascending)
 
+For service accounts access, the awardee parameter is required.
 Example:
 
     GET /ParticipantSummary?awardee=PITT&_sort=lastModified
+
+Example sync:
+
+    GET /ParticipantSummary?awardee=PITT&_sort=lastModified&_sync=true
+
 Pagination is provided with a token i.e.
 
     GET /ParticipantSummary?awardee=PITT&_sort=lastModified&_token=<token string>
@@ -390,15 +396,15 @@ Example response:
 * Authorized users can generate API keys for access.
 * Awardees are responsible for rotating keys on a three day timeframe.
     ** Permissions will be revoked after this time.
-* Awardee must specify Awardee or Organization/Site of Awardee in call to API.
+* Service account for specific awardees  must specify the awardee parameter in requests.
 
     `GET /ParticipantSummary?awardee=PITT`
 
     `GET /ParticipantSummary?awardee=PITT&state=PIIState_MA`
 
-    `GET /ParticipantSummary?organization=PITT_UPMC`
+    `GET /ParticipantSummary?awardee=PITT&organization=PITT_UPMC`
 
-    `GET /ParticipantSummary?site=hpo-site-UPMC`
+    `GET /ParticipantSummary?awardee=PITT&site=hpo-site-UPMC`
 
 
 For integer and date fields, the following prefixes can be provided for query parameter values to
@@ -427,31 +433,16 @@ Other supported parameters from the FHIR spec:
 * `_sort:desc`: the name of a field to sort results by, in descending order, followed by last name,
   first name, date of birth, and participant ID.
 
-If no sort order is requested, the default sort order is last name, first name, date of birth, and
-participant ID.
-
-The response is an FHIR Bundle containing participant summaries. If more than the requested number
- of participant summaries match the specified criteria, a "next" link will be returned that can
- be used in a follow on request to fetch more participant summaries.
-
-
-Other supported parameters from the FHIR spec:
-
-* `_count`: the maximum number of participant summaries to return; the default is 100, the maximum
-  supported value is 10,000
-
-* `_sort`: the name of a field to sort results by, in ascending order, followed by last name, first
-  name, date of birth, and participant ID.
-
-* `_sort:desc`: the name of a field to sort results by, in descending order, followed by last name,
-  first name, date of birth, and participant ID.
+We furthermore support an `_includeTotal` query parameter that will execute a
+count of the given set of summaries and attach that to the returned FHIR Bundle
+as a `total` key.
 
 If no sort order is requested, the default sort order is last name, first name, date of birth, and
 participant ID.
 
 The response is an FHIR Bundle containing participant summaries. If more than the requested number
- of participant summaries match the specified criteria, a "next" link will be returned that can
- be used in a follow on request to fetch more participant summaries.
+of participant summaries match the specified criteria, a "next" link will be returned that can
+be used in a follow on request to fetch more participant summaries.
 
 ## Questionnaire and QuestionnaireResponse API
 
@@ -824,7 +815,7 @@ Mayo has defined a sample manifest format that will be uploaded to the RDR
 daily. The RDR scans this manifest and uses it to populate `BiobankSamples`
 resources. Once these are created, a client can query for available samples:
 
-#### TODO `GET /Participant/:pid/BiobankSamples
+#### TODO `GET /Participant/:pid/BiobankSamples`
 
 ## Organization API
 
@@ -875,6 +866,7 @@ Example response:
                 "notes": "Formerly University of Arizona CATS Research  ",
                 "phoneNumber": "666-666-6666",
                 "physicalLocationName": "",
+                "enrollingStatus": "INACTIVE"
                 "siteStatus": "INACTIVE"
               },
               {
@@ -902,6 +894,7 @@ Example response:
                 "notes": "Formerly University of Arizona CATS Research  ",
                 "phoneNumber": "555-555-5555",
                 "physicalLocationName": "Building 23",
+                "enrollingStatus": "ACTIVE"
                 "siteStatus": "ACTIVE"
               }
             ]
@@ -925,7 +918,7 @@ Example response:
 }
 ```
 
-#### `GET /Awardee/:aid
+#### `GET /Awardee/:aid`
 
 Retrieves metadata about an individual awardee, with nested resources for child
 organizations and sites within them.
@@ -960,6 +953,7 @@ Example response:
           "phoneNumber": "666-666-6666",
           "physicalLocationName": "",
           "siteStatus": "INACTIVE",
+          "enrollingStatus": "INACTIVE",
 	  "longitude": -110.978,
 	  "latitude": 32.238
         },
@@ -985,6 +979,7 @@ Example response:
           "notes": "Formerly University of Arizona CATS Research  ",
           "phoneNumber": "555-555-5555",
           "physicalLocationName": "Building 23",
+          "enrollingStatus": "ACTIVE",
           "siteStatus": "ACTIVE"
         }
       ]
