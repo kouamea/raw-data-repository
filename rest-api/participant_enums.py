@@ -40,6 +40,17 @@ class EnrollmentStatus(messages.Enum):
   MEMBER = 2
   FULL_PARTICIPANT = 3
 
+class GenderIdentity(messages.Enum):
+  """Derived from answers to the gender question in questionnaire responses"""
+  UNSET = 0
+  TRANSGENDER = 41
+  MAN = 42
+  WOMAN = 43
+  ADDITIONAL_OPTIONS = 44
+  NON_BINARY = 45
+  PREFER_NOT_TO_ANSWER = 1149
+  OTHER = 1180
+
 class SampleStatus(messages.Enum):
   """Status of biobank samples"""
   UNSET = 0
