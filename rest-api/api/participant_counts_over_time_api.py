@@ -55,7 +55,11 @@ class ParticipantCountsOverTimeApi(Resource):
     del filters['end_date']
     del filters['stratification']
 
-    results = self.service.get_filtered_results(start_date, end_date,
+    # TODO: Support this as a URL parameter.
+    # Per design doc: "1 (day), 7, 30 -- later, CALENDAR_MONTH (defaults to 1)"
+    bucket_size = 1
+
+    results = self.service.get_filtered_results(bucket_size, start_date, end_date,
                                                 filters, stratification=stratification)
 
     return results

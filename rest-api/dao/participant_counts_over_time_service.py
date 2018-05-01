@@ -11,9 +11,10 @@ class ParticipantCountsOverTimeService(ParticipantSummaryDao):
   def __init__(self):
     super(ParticipantSummaryDao, self).__init__(ParticipantSummary)
 
-  def get_filtered_results(self, start_date, end_date, filters, stratification='ENROLLMENT_STATUS'):
+  def get_filtered_results(self, bucket_size, start_date, end_date, filters, stratification='ENROLLMENT_STATUS'):
     """Queries DB, returns results in format consumed by front-end
 
+    :param bucket_size: Integer for time interval, in days, to roll up results into
     :param start_date: Start date object
     :param end_date: End date object
     :param filters: Objects representing filters specified in UI
@@ -42,7 +43,8 @@ class ParticipantCountsOverTimeService(ParticipantSummaryDao):
     else:
       raise BadRequest('Invalid stratification: %s' % stratification)
 
-    params = {'start_date': start_date, 'end_date': end_date}
+    params = {'bucket_size': bucket_size, 'start_date': start_date,
+              'end_date': end_date}
 
     results_by_date = []
 
@@ -247,21 +249,24 @@ class ParticipantCountsOverTimeService(ParticipantSummaryDao):
 
   def get_gender_identity_sql(self, filters_sql_p):
 
+    # Note that "%%" near ":bucket_size = 0" escapes a %-literal
+    # (see https://stackoverflow.com/questions/10678229/)
     sql = """
-      SELECT calendar.day start_date,
+      SELECT
         gender_identity,
-        SUM(ps_sum.cnt * (DATEDIFF(ps_sum.day, calendar.day) < :bucket_size)) registered_count
+        SUM(ps_sum.cnt * (DATEDIFF(ps_sum.day, calendar.day) < :bucket_size)) registered_count,
+        calendar.day start_date
       FROM calendar,
         (SELECT COUNT(*) cnt, ps.gender_identity_id gender_identity,
                                                   DATE(ps.sign_up_time) day
           FROM participant p
         LEFT OUTER JOIN participant_summary ps ON
             p.participant_id = ps.participant_id
-        %(filter_sql_p)
+            %(filters_p)s
         GROUP BY ps.gender_identity_id, day) ps_sum
       WHERE calendar.day >= :start_date
         AND calendar.day <= :end_date
-        AND DATEDIFF(:start_date, calendar.day) % :bucket_size = 0
+        AND DATEDIFF(:start_date, calendar.day) %% :bucket_size = 0
       GROUP BY calendar.day, gender_identity
       ORDER BY calendar.day, gender_identity;
       """ % {'filters_p': filters_sql_p}
