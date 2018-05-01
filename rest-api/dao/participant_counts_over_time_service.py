@@ -3,7 +3,7 @@ from werkzeug.exceptions import BadRequest
 from .participant_summary_dao import ParticipantSummaryDao
 from model.participant_summary import ParticipantSummary
 from participant_enums import EnrollmentStatus, TEST_HPO_NAME, TEST_EMAIL_PATTERN
-from participant_enums import WithdrawalStatus
+from participant_enums import WithdrawalStatus, GenderIdentity
 from dao.hpo_dao import HPODao
 
 class ParticipantCountsOverTimeService(ParticipantSummaryDao):
@@ -36,6 +36,9 @@ class ParticipantCountsOverTimeService(ParticipantSummaryDao):
     elif str(stratification) == 'ENROLLMENT_STATUS':
       strata = [str(val) for val in EnrollmentStatus]
       sql = self.get_enrollment_status_sql(filters_sql_ps, filters_sql_p)
+    elif str(stratification) == 'GENDER_IDENTITY':
+      strata = [str(val) for val in GenderIdentity]
+      sql = self.get_gender_identity_sql(filters_sql_p)
     else:
       raise BadRequest('Invalid stratification: %s' % stratification)
 
@@ -239,5 +242,28 @@ class ParticipantCountsOverTimeService(ParticipantSummaryDao):
           GROUP BY calendar.day
           ORDER BY calendar.day;
       """ % {'filters_ps': filters_sql_ps, 'filters_p': filters_sql_p}
+
+    return sql
+
+  def get_gender_identity_sql(self, filters_sql_p):
+
+    sql = """
+      SELECT calendar.day start_date,
+        gender_identity,
+        SUM(ps_sum.cnt * (DATEDIFF(ps_sum.day, calendar.day) < :bucket_size)) registered_count
+      FROM calendar,
+        (SELECT COUNT(*) cnt, ps.gender_identity_id gender_identity,
+                                                  DATE(ps.sign_up_time) day
+          FROM participant p
+        LEFT OUTER JOIN participant_summary ps ON
+            p.participant_id = ps.participant_id
+        %(filter_sql_p)
+        GROUP BY ps.gender_identity_id, day) ps_sum
+      WHERE calendar.day >= :start_date
+        AND calendar.day <= :end_date
+        AND DATEDIFF(:start_date, calendar.day) % :bucket_size = 0
+      GROUP BY calendar.day, gender_identity
+      ORDER BY calendar.day, gender_identity;
+      """ % {'filters_p': filters_sql_p}
 
     return sql
