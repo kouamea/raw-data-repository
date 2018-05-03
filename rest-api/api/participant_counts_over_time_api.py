@@ -122,7 +122,7 @@ class ParticipantCountsOverTimeApi(Resource):
 
     # Validate stratifications
     try:
-      params['stratification'] = Stratifications(stratification_str)
+      params['stratification'] = str(Stratifications(stratification_str))
     except TypeError:
       raise BadRequest('Invalid stratification: %s' % stratification_str)
 

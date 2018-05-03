@@ -32,13 +32,13 @@ class ParticipantCountsOverTimeService(ParticipantSummaryDao):
     filters_sql_ps = self.get_facets_sql(filters)
     filters_sql_p = self.get_facets_sql(filters, table_prefix='p')
 
-    if str(stratification) == 'TOTAL':
+    if stratification == 'TOTAL':
       strata = ['TOTAL']
       sql = self.get_total_sql(filters_sql_ps)
-    elif str(stratification) == 'ENROLLMENT_STATUS':
+    elif stratification == 'ENROLLMENT_STATUS':
       strata = [str(val) for val in EnrollmentStatus]
       sql = self.get_enrollment_status_sql(filters_sql_ps, filters_sql_p)
-    elif str(stratification) == 'GENDER_IDENTITY':
+    elif stratification == 'GENDER_IDENTITY':
       strata = GenderIdentity
       sql = self.get_gender_identity_sql(filters_sql_p)
     else:
@@ -77,10 +77,11 @@ class ParticipantCountsOverTimeService(ParticipantSummaryDao):
           if code is None:
             code = 0
           key = str(strata(code))
+          value = int(value)
           if date in metrics_by_date:
-            metrics_by_date[date][key] = int(value)
+            metrics_by_date[date][key] = value
           else:
-            metrics_by_date[date] = {key: int(value)}
+            metrics_by_date[date] = {key: value}
         metrics_by_date = list(metrics_by_date.iteritems())
         for date, metrics in metrics_by_date:
           results_by_date.append({
