@@ -11,7 +11,8 @@ class ParticipantCountsOverTimeService(ParticipantSummaryDao):
   def __init__(self):
     super(ParticipantSummaryDao, self).__init__(ParticipantSummary)
 
-  def get_filtered_results(self, bucket_size, start_date, end_date, filters, stratification='ENROLLMENT_STATUS'):
+  def get_filtered_results(self, bucket_size, start_date, end_date, filters,
+                           stratification='ENROLLMENT_STATUS'):
     """Queries DB, returns results in format consumed by front-end
 
     :param bucket_size: Integer for time interval, in days, to roll up results into
