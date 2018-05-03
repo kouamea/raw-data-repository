@@ -39,7 +39,7 @@ class ParticipantCountsOverTimeService(ParticipantSummaryDao):
       strata = [str(val) for val in EnrollmentStatus]
       sql = self.get_enrollment_status_sql(filters_sql_ps, filters_sql_p)
     elif str(stratification) == 'GENDER_IDENTITY':
-      strata = [str(val) for val in GenderIdentity]
+      strata = GenderIdentity
       sql = self.get_gender_identity_sql(filters_sql_p)
     else:
       raise BadRequest('Invalid stratification: %s' % stratification)
@@ -56,19 +56,37 @@ class ParticipantCountsOverTimeService(ParticipantSummaryDao):
     # into expected list-of-dictionaries response format
     try:
       results = cursor.fetchall()
-      for result in results:
-        date = result[-1]
-        metrics = {}
-        values = result[:-1]
-        for i, value in enumerate(values):
-          key = strata[i]
-          if value == None:
-            value = 0
-          metrics[key] = int(value)
-        results_by_date.append({
-          'date': str(date),
-          'metrics': metrics
-        })
+      if stratification in ('TOTAL', 'ENROLLMENT_STATUS'):
+        for result in results:
+          date = result[-1]
+          metrics = {}
+          values = result[:-1]
+          for i, value in enumerate(values):
+            key = strata[i]
+            if value == None:
+              value = 0
+            metrics[key] = int(value)
+          results_by_date.append({
+            'date': str(date),
+            'metrics': metrics
+          })
+      elif stratification == 'GENDER_IDENTITY':
+        metrics_by_date = {}
+        for result in results:
+          code, value, date = result
+          if code is None:
+            code = 0
+          key = str(strata(code))
+          if date in metrics_by_date:
+            metrics_by_date[date][key] = int(value)
+          else:
+            metrics_by_date[date] = {key: int(value)}
+        metrics_by_date = list(metrics_by_date.iteritems())
+        for date, metrics in metrics_by_date:
+          results_by_date.append({
+            'date': str(date),
+            'metrics': metrics
+          })
     finally:
       cursor.close()
 
