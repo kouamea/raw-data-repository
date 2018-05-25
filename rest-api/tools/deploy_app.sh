@@ -45,6 +45,7 @@ UPDATE_TRACKER=tools/update_release_tracker.py
 if [ "${PROJECT}" == "all-of-us-rdr-prod" ]
 then
   CONFIG="config/config_prod.json"
+  UPDATE_TRACKER=echo
 elif [ "${PROJECT}" == "all-of-us-rdr-stable" ]
 then
   CONFIG="config/config_stable.json"
